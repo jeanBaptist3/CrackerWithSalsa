@@ -2,11 +2,11 @@ import gzip
 import struct
 
 # Define the range of 32-bit integers
-min_int = 0  # Minimum 32-bit integer
-max_int = 2**31 - 1  # Maximum 32-bit integer
+min_int = -2**31 +1 # Minimum 32-bit integer
+max_int = -2**31 + 1024 # Maximum 32-bit integer
 
 # File name
-output_file_name = "32_bit_integers.bin.gz"
+output_file_name = "32_bit_integers_test.bin.gz"
 
 # Open a gzip-compressed binary file for writing
 with gzip.open(output_file_name, "wb") as file:
