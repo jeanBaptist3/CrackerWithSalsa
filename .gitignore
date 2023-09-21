@@ -1,6 +1,5 @@
 data
 32_bit_integers.bin.gz
-tester.py
 vocabularData.py
 dataLoader.py
 readVocabular.py
@@ -9,3 +8,6 @@ test
 time_test.txt
 allStrings
 32_bit_integers_dataset_compressed
+custom_binary_tokenizer.json
+skript.py
+load_tokenizer.py
