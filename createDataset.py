@@ -1,21 +1,35 @@
-from datasets import Dataset
 import struct
-import gzip
+import time
+from datasets import Dataset
 
-# Define the range of 32-bit integers
-min_int = -2**31  # Minimum 32-bit integer
-max_int = 2**31 - 1  # Maximum 32-bit integer
+start_time = time.time();
+# Define the batch size
+batch_size = 2**8  # You can adjust this to your preferred batch size
 
-# Generate a list of 32-bit integers
-integers = list(range(min_int, max_int + 1))
+min_int = 0 # Minimum 32-bit integer
+max_int = 2**24  # Maximum 32-bit integer
 
-# Convert integers to bytes
-byte_data = [struct.pack('i', i) for i in integers]
+# Generate data in batches
+data_batches = []
+batch = []
 
-# Create a dataset
-dataset = Dataset.from_dict({"data": byte_data})
+for i in range(min_int, max_int):
+    batch.append({"byte": struct.pack('i', i)})
 
-# Specify a compression option when saving to disk
-dataset.save_to_disk("32_bit_integers_dataset_compressed", storage_options={"compress": "gzip"})
+    # Check if the batch is full
+    if len(batch) == batch_size:
+        data_batches.append(batch)
+        batch = []
+
+# If there are remaining items in the last batch, add it
+if batch:
+    data_batches.append(batch)
+
+# Create a dataset from the list of data batches
+dataset = Dataset.from_dict({"data": data_batches})
+
+# Save the dataset to disk with gzip compression
+dataset.save_to_disk("allStrings", storage_options={"compress": "gzip"})
 
 print("Dataset with compression created and saved.")
+print("--- % seconds ----" % (time.time() - start_time))

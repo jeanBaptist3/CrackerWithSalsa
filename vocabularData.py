@@ -6,7 +6,7 @@ min_int = -2**31 +1 # Minimum 32-bit integer
 max_int = -2**31 + 1024 # Maximum 32-bit integer
 
 # File name
-output_file_name = "32_bit_integers_test.bin.gz"
+output_file_name = "test"
 
 # Open a gzip-compressed binary file for writing
 with gzip.open(output_file_name, "wb") as file:

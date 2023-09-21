@@ -1,7 +1,11 @@
-data\data_dump.csv
+data
 32_bit_integers.bin.gz
 tester.py
 vocabularData.py
 dataLoader.py
 readVocabular.py
 32_bit_integers_test.bin.gz
+test
+time_test.txt
+allStrings
+32_bit_integers_dataset_compressed

@@ -1,28 +1,33 @@
-import gzip
+from datasets import load_from_disk
+from transformers import AutoTokenizer, AutoModel
+from tokenizers.pre_tokenizers import Punctuation
 import struct
-from file_read_backwards import FileReadBackwards
 
-def padto32BitString(number) :
-    paddedString = number
-    while len(paddedString) < 32 :
-            paddedString = '0' + paddedString
-    return paddedString
-# File name
-input_file_name = "32_bit_integers_test.bin.gz"
+print("klappt")
+# Load the dataset containing binary representations of 32-bit integers
+dataset = load_from_disk("32_bit_integers_dataset_compressed")
 
+# Function to convert binary strings to integers and then to the desired string format
+def binary_to_string(binary_str):
+    integer_value = struct.unpack('i', bytes.fromhex(binary_str))[0]  # Convert binary string to integer
+    return format(integer_value, '032b')  # Convert integer to a 32-bit binary string without '0b'
 
-# Open the gzipped binary file for reading
-with gzip.open(input_file_name, "rb") as file:
-    integers = []
+# Apply the conversion function to the dataset
+dataset = dataset.map(lambda example: {'data': binary_to_string(example['data'])}, batched=True)
 
-    # Read and unpack the first 'n' integers
-    for _ in range(128):
-        binary_data = file.read(4)  # Read 4 bytes (32 bits)
-        if not binary_data:
-            break  # Reached the end of the file
-        integer = struct.unpack('i', binary_data)[0]  # Unpack as a 32-bit integer
-        print(padto32BitString(bin(integer)))
-        integers.append(bin(integer))
+# Train a tokenizer using the transformed dataset
+from transformers import AutoTokenizer
 
-    integers = list(map(padto32BitString,integers))
-print(f"The first 32-bit integers from '{input_file_name}' are: {integers}")
+# T5Model and T5TokenizerFast
+
+tokenizer = AutoTokenizer.from_pretrained("t5-small")(special_tokens =["[NONC1]","[NONC2]"])
+model = AutoModel.from_pretrained("t5-small")
+
+# define preTokenizer
+
+tokenizer.pre_tokenizer = Punctuation()
+
+# Tokenize the data
+tokenized_data = dataset.map(lambda examples: tokenizer(examples['data'], truncation=True, padding='max_length', max_length=128), batched=True)
+
+# Now, you can use 'tokenized_data' to train a model or perform other NLP tasks with Hugging Face Transformers.
