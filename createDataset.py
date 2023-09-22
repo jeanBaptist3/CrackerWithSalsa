@@ -1,55 +1,28 @@
 import struct
-import time
-import concurrent.futures
 from datasets import Dataset
-
-#start_time = time.time();
-
-
-# batch size for memory regulation
-batch_size = 2**21
-
-min_int = -2**22 # Minimum 32-bit integer
-max_int = 2**22# Maximum 32-bit integer
-output_directory = "data"
-
-# Function to generate a batch of data
-def generate_and_save_batch(start, end, filename):
-    batch = []
-    for i in range(start, end):
-        batch.append(struct.pack('i', i))
-
-        # Check if the batch is full
-        if len(batch) == batch_size:
-            dataset = Dataset.from_dict({"byte": batch})
-            dataset.save_to_disk(f"{output_directory}/{filename}", storage_options={"compress": "gzip"})
-            batch = []
-
-    # Save any remaining data in the last batch
-    if batch:
-        dataset = Dataset.from_dict({"byte": batch})
-        dataset.save_to_disk(f"{output_directory}/{filename}", storage_options={"compress": "gzip"})
-
-# Define the number of parallel workers (adjust as needed)
-num_workers = 4
-
-# Create a ThreadPoolExecutor with the specified number of workers
-with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-    futures = []
-
-    # Divide the range into chunks for parallel processing
-    chunk_size = (max_int - min_int) // num_workers
-    counter = 0
-    for i in range(min_int, max_int, chunk_size):
-        start = i
-        end = min(i + chunk_size, max_int)
-        filename = f"allStrings_partial_{counter}.arrow"
-        futures.append(executor.submit(generate_and_save_batch, start, end, filename))
-        counter = counter+1
-
-# Wait for all tasks to complete
-concurrent.futures.wait(futures)
+from time import time
 
 
+timestart = time()
+# Function to generate and yield 32-bit binary strings as bytes
+def generate_binary_strings(min_int, max_int):
+    for i in range(min_int, max_int + 1):
+        binary_string = struct.pack('I', i & 0xFFFFFFFF)
+        yield binary_string
 
-#print("--- % seconds ----" % (time.time() - start_time))
+min_int = -2**31  # Minimum 32-bit integer
+max_int = 2**31 -1 # Maximum 32-bit integer
+output_directory = "data"  # Specify your output directory
+
+data_generator = generate_binary_strings(min_int, max_int)
+
+# Create a list to store the generated binary strings
+binary_strings = list(data_generator)
+
+# Create a Dataset from the list of binary strings
+dataset = Dataset.from_dict({"byte": binary_strings})
+
+# Save the dataset to disk in your desired format (e.g., Arrow)
+dataset.save_to_disk(f"{output_directory}/binary_strings.arrow", storage_options={"compress": "gzip"})
+
+print("--- % seconds ---" % str(time()-timestart))
