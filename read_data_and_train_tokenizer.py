@@ -6,7 +6,6 @@ from tokenizers.models import WordLevel
 fulldata = []
 
 
-checkpoint = "t5-small"
 #function to convert the bytes to binary strings
 def binary_to_bit_string(binary_data):
     # Unpack as a 4-byte integer using 'i' format
@@ -21,12 +20,12 @@ def binary_to_bit_string(binary_data):
     return bit_string
 
 
-for i in range(0,33) :
-    dataset = Dataset.load_from_disk(f"data/allStrings_partial_{i}.arrow")
-    for integer in dataset["byte"] :
-        fulldata.append(binary_to_bit_string(integer))
 
-print(len(fulldata))
+dataset = Dataset.load_from_disk(f"data/binary_strings.arrow")
+for integer in dataset["byte"] :
+    fulldata.append(binary_to_bit_string(integer))
+
+
 # Initialize a custom tokenizer
 tokenizer = Tokenizer(WordLevel())
 
@@ -45,11 +44,11 @@ tokenizer.decoder = decoder
 training_data = fulldata
 
 # Train the tokenizer
-trainer = trainers.WordLevelTrainer(special_tokens=["[PAD]", "[CLS]", "[SEP]", "[MASK]", "[UNK]", "[NONC1]", "[NONC2]"])
+trainer = trainers.WordLevelTrainer(vocab_size= 2**32 + 2,show_progress = True,special_tokens=["[PAD]", "[CLS]", "[SEP]", "[MASK]", "[UNK]", "[NONC1]", "[NONC2]"])
 tokenizer.train_from_iterator(training_data, trainer=trainer)
 
 
 # Save the trained tokenizer to a file
-tokenizer.save("custom_tokenizer.json")
+tokenizer.save("tokenizer_stuff/custom_tokenizer.json")
 
 print("Saved Tokenizer")
