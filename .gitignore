@@ -10,4 +10,5 @@ allStrings
 32_bit_integers_dataset_compressed
 custom_binary_tokenizer.json
 skript.py
-load_tokenizer.py
+.idea\
+

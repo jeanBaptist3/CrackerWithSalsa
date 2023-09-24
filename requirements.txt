@@ -1,0 +1,6 @@
+datasets
+transformers[senctencepiece]
+tokenizers
+numpy
+torch
+pycryptodome

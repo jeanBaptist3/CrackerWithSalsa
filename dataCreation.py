@@ -9,8 +9,27 @@ from transformers import T5TokenizerFast
 
 #this is the plaintext, 256*blocks bit only 0, so the encrytion will yield only the stream from ChaCha
 
+def binary_to_hex(binary_str):
+    # Check if the length of the binary string is a multiple of 16
+    if len(binary_str) % 16 != 0:
+        raise ValueError("Binary string length is not a multiple of 16")
 
-def create_data(generated_blocks, prediction_blocks) :
+    hex_str = ""
+    # Process the binary string in 16-bit chunks and convert to hexadecimal
+    for i in range(0, len(binary_str), 16):
+        # Extract a 16-bit chunk from the binary string
+        chunk = binary_str[i:i+16]
+        # Convert the chunk to an integer
+        chunk_int = int(chunk, 2)
+        # Convert the integer to a hexadecimal string and remove the '0x' prefix
+        hex_chunk = hex(chunk_int)[2:]
+        # Make sure the hexadecimal chunk is 4 characters long by adding leading zeros if needed
+        hex_chunk = hex_chunk.zfill(4)
+        hex_str += hex_chunk
+
+    return hex_str
+
+def create_data(generated_blocks, prediction_blocks, bytes_per_token) :
     prefix = "predict the next 512 bit "
     plaintext = b''
     train_size = 90000
@@ -42,19 +61,27 @@ def create_data(generated_blocks, prediction_blocks) :
         if (i % (full_size / number_of_keys) == 0):
             keys.append(get_random_bytes(32))
             counter = counter + 1
-        ciphers.append(Cha.new(key=keys[counter-1]))
+        ciphers.append(Cha.new(key=keys[counter - 1]))
         ciphers[i].seek(0)
         ciphetext = ciphers[i].encrypt(plaintext)
         ciphetexts.append(ciphetext)
         nonce = ciphers[i].nonce
-        ciphetext_bits = ''.join(format(byte,'08b') for byte in ciphetext)
+        ciphetext_bits = ''.join(format(byte, '08b') for byte in ciphetext)
         nonce_bits = ''.join(format(byte, '08b') for byte in nonce)
         nonces.append(nonce)
-        pretokenized_string = ciphetext_bits
-        for j in range(0,blocks*16) :
-            pretokenized_string = pretokenized_string[:blocks*512-j*32] + ',' +pretokenized_string[blocks*512-j*32:]
-        
-        data.append([ pretokenized_string[33*32:] + ',[NONC1]' +nonce_bits[:32] +',[NONC2]' + nonce_bits[32:] , pretokenized_string[:32*33] ])
+        pretokenized_string = binary_to_hex(ciphetext_bits)
+        nonce_bits = binary_to_hex(nonce_bits)
+
+
+        for j in range(1, blocks * 64 //bytes_per_token):
+            pretokenized_string = pretokenized_string[:blocks*128 - j * 2*bytes_per_token]+ "," + pretokenized_string[blocks*128 - j *2*bytes_per_token:]
+
+
+
+        for y in range(0,8//bytes_per_token) :
+            nonce_bits = nonce_bits[:16-(y+1)*2*bytes_per_token] + ',[NONC'+ str(y)+']'+ nonce_bits[16-(y+1)*2*bytes_per_token:]
+
+        data.append((pretokenized_string[gen_blocks*(128+64//bytes_per_token):] + nonce_bits,  pretokenized_string[:gen_blocks*(128+128//bytes_per_token)]))
 
     """
     This is for testing the correct encoding and decoding 
