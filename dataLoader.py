@@ -1,16 +1,46 @@
 import csv
 import base64
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 
+from tokenizers import Tokenizer
+
+tokenizer = Tokenizer.from_file(path='tokenizer_stuff/custom_tokenizer_wordpiece.json')
 
 # Initialize a list to store your processed data
 processed_data = []
 
-def load_csv(path) :
-    return load_dataset("csv",data_files = path)
+
+def load_csv(path):
+    return load_dataset("csv", data_files=path)
+
 
 def prepare_data(data):
-    adjusted_dataset = data['train'].train_test_split(train_size=10/11, seed=1729)
-    full_dataset = adjusted_dataset['train'].train_test_split(train_size=9/10, seed =2020)
-    full_dataset['validation'] = adjusted_dataset.pop('test')
+    tokenized_input = tokenize_function(data['train'])
+    tokenized_output = tokenize_out(data['train'])
+
+    train_data = Dataset.from_dict(
+        {
+            "input_ids": list(map(get_ids, tokenized_input)),
+            "attention_mask": list(map(get_attention, tokenized_input)),
+            "labels": list(map(get_ids, tokenized_output)),
+        }
+    )
+    full_dataset = train_data.train_test_split(test_size=1 / 11)
+
     return full_dataset
+
+
+def tokenize_function(example):
+    return tokenizer.encode_batch(example['block_and_nonce'])
+
+
+def tokenize_out(example):
+    return tokenizer.encode_batch(example['next_block'])
+
+
+def get_attention(encoding):
+    return encoding.attention_mask
+
+
+def get_ids(encoding):
+    return encoding.ids

@@ -81,7 +81,7 @@ def create_data(generated_blocks, prediction_blocks, bytes_per_token) :
         for y in range(0,8//bytes_per_token) :
             nonce_bits = nonce_bits[:16-(y+1)*2*bytes_per_token] + ',[NONC'+ str(y)+']'+ nonce_bits[16-(y+1)*2*bytes_per_token:]
 
-        data.append((pretokenized_string[gen_blocks*(128+64//bytes_per_token):] + nonce_bits,  pretokenized_string[:gen_blocks*(128+128//bytes_per_token)]))
+        data.append((pretokenized_string[:gen_blocks*(128+64//bytes_per_token)] + nonce_bits,  pretokenized_string[gen_blocks*(128+128//bytes_per_token):]))
 
     """
     This is for testing the correct encoding and decoding 
